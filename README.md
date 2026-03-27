@@ -1,9 +1,9 @@
 # thugmail
-simple tool to generate temp gmail accounts.
+A Simple tool to generate temp gmail accounts.
 
 > [!WARNING]
-> you need to get an api key from https://rapidapi.com/johndevz/api/gmailnator (it is free) <br>
-> and put it in `.apikey`
+> You need to get an api key from https://rapidapi.com/johndevz/api/gmailnator (it is free) <br>
+> and put it in `.apikey`.
 
 | argument       | info |
 |----------------|------|

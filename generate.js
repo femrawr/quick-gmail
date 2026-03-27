@@ -30,7 +30,7 @@ const data = await fetch('https://gmailnator.p.rapidapi.com/api/emails/generate'
 }).then(async (res) => {
     return await res.json();
 }).catch((err) => {
-    console.error('failed to generate email -', err);
+    console.error('Failed to generate email -', err);
 });
 
 saveEmail(data.email);

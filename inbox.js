@@ -24,11 +24,12 @@ const email = (() => {
     if (email) return email
 
     const file = path.join(os.tmpdir(), '.thugmail');
-    if (!fs.existsSync(file)) {
-        return '';
-    }
+    if (!fs.existsSync(file)) return '';
 
-    return fs.readFileSync(file);
+    return fs
+        .readFileSync(file)
+        .toString('utf-8')
+        .trim();
 })();
 
 const inbox = await fetch('https://gmailnator.p.rapidapi.com/api/inbox', {
@@ -46,15 +47,20 @@ const inbox = await fetch('https://gmailnator.p.rapidapi.com/api/inbox', {
 }).then(async (res) => {
     return await res.json();
 }).catch((err) => {
-    console.error('failed to get inbox -', err);
+    console.error('Failed to get inbox -', err);
 });
 
 if (inbox.message === 'The email field must be a valid email address.') {
-    console.error(`the email provided "${email}" is not valid`);
+    console.error(`The email provided "${email}" is not valid.`);
     process.exit(-1);
 }
 
-const messages = data.messages.map((msg) => msg.id);
+const messages = inbox.messages.map((msg) => msg.id);
+if (messages.length === 0) {
+    console.error(`The email provided "${email}" has an empty inbox.`);
+    process.exit(-1);
+}
+
 messages.forEach(async (id) => {
     const message = await fetch('https://gmailnator.p.rapidapi.com/api/inbox/' + id, {
         method: 'GET',
@@ -67,7 +73,7 @@ messages.forEach(async (id) => {
     }).then(async (res) => {
         return await res.json();
     }).catch((err) => {
-        console.error('failed to get inbox -', err);
+        console.error('Failed to get inbox -', err);
     });
 
     console.log('from -', message.from);
