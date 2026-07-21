@@ -23,7 +23,7 @@ const email = (() => {
     const email = getFlag('e') || getFlag('email');
     if (email) return email
 
-    const file = path.join(os.tmpdir(), '.thugmail');
+    const file = path.join(os.tmpdir(), '.quickmail');
     if (!fs.existsSync(file)) return '';
 
     return fs
@@ -61,7 +61,17 @@ if (messages.length === 0) {
     process.exit(-1);
 }
 
-messages.forEach(async (id) => {
+const scanners = [];
+
+const customs = path.join(__dirname, 'customs');
+fs.readdirSync(customs).forEach(async (file) => {
+    if (!file.endsWith('.js')) return;
+
+    const { default: scanner } = await import("./customs/" + file);
+    scanners.push(scanner);
+});
+
+const allMails = await Promise.all(messages.map(async (id) => {
     const message = await fetch('https://gmailnator.p.rapidapi.com/api/inbox/' + id, {
         method: 'GET',
         headers: {
@@ -70,16 +80,52 @@ messages.forEach(async (id) => {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-    }).then(async (res) => {
-        return await res.json();
-    }).catch((err) => {
-        console.error('Failed to get inbox -', err);
+    }).then((res) => res.json());
+
+    return {
+        from: message.from,
+        subject: message.subject,
+        timestamp: message.timestamp,
+        time_ago: message.time_ago,
+        content: message.content,
+    };
+}));
+
+const scannedMails = [];
+
+allMails.forEach((mail) => {
+    const scanner = scanners.find((scan) => {
+        return mail.from
+            .toLowerCase()
+            .includes(scan.from.toLowerCase())
     });
 
-    console.log('from -', message.from);
-    console.log('subject -', message.subject);
-    console.log('time -', message.timestamp);
-    console.log('days -', message.time_ago);
-    console.log('data -', message.content);
+    if (!scanner) return;
+
+    const important = scanner.scan(mail.content);
+    if (important === null) return;
+
+    scannedMails.push({
+        from: mail.from,
+        data: important,
+    });
+});
+
+scannedMails.forEach((mail) => {
+    console.log(`${mail.from} - ${mail.data}`);
+});
+
+if (getFlag('i') || getFlag('important')) {
+    process.exit(0);
+}
+
+console.log('\n\n');
+
+allMails.forEach((mail) => {
+    console.log('from -', mail.from);
+    console.log('what -', mail.subject);
+    console.log('time -', mail.timestamp);
+    console.log('days -', mail.time_ago);
+    console.log('data -', mail.content);
     console.log('\n');
 });

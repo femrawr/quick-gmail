@@ -13,7 +13,7 @@ const saveEmail = (email) => {
         return;
     }
 
-    const file = path.join(os.tmpdir(), '.thugmail');
+    const file = path.join(os.tmpdir(), '.quickmail');
     fs.writeFileSync(file, email);
 };
 
@@ -33,5 +33,10 @@ const data = await fetch('https://gmailnator.p.rapidapi.com/api/emails/generate'
     console.error('Failed to generate email -', err);
 });
 
-saveEmail(data.email);
+if (data.message === 'You are not subscribed to this API.') {
+    console.error('You need to subscrib to the api, top right of the page i think.')
+    process.exit(-1);
+}
+
 console.log(data.email);
+saveEmail(data.email);
